@@ -1,0 +1,46 @@
+version: "3"
+
+services:
+
+  matomo:
+    build: .
+    restart: always
+    volumes:
+      - matomo:/var/www/html
+    environment:
+      MATOMO_DATABASE_ADAPTER: ${MATOMO_DATABASE_ADAPTER}
+      MATOMO_DATABASE_TYPE: ${MATOMO_DATABASE_TYPE}
+      MATOMO_DATABASE_HOST: ${MATOMO_DATABASE_HOST}
+      MATOMO_DATABASE_USERNAME: ${MATOMO_DATABASE_USERNAME}
+      MATOMO_DATABASE_PASSWORD: ${MATOMO_DATABASE_PASSWORD}
+      MATOMO_DATABASE_DBNAME: ${MATOMO_DATABASE_DBNAME}
+      MATOMO_DATABASE_TABLES_PREFIX: ${MATOMO_DATABASE_TABLES_PREFIX}
+
+      MATOMO_SUPERUSER_USERNAME: ${MATOMO_SUPERUSER_USERNAME}
+      MATOMO_SUPERUSER_PASSWORD: ${MATOMO_SUPERUSER_PASSWORD}
+      MATOMO_SUPERUSER_EMAIL: ${MATOMO_SUPERUSER_EMAIL}
+
+      MATOMO_SITENAME: ${MATOMO_SITENAME}
+      MATOMO_URL: ${MATOMO_URL}
+      MATOMO_INDEX: ${MATOMO_INDEX}
+      MATOMO_TIMEZONE: ${MATOMO_TIMEZONE}
+    ports:
+      - "80:80"
+
+  db:
+    image: mariadb
+    command: --max-allowed-packet=64MB
+    restart: always
+    volumes:
+      - db-data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+    ports:
+      - "3306:3306"
+
+volumes:
+  db-data:
+  matomo:
