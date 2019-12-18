@@ -14,7 +14,7 @@ steps:
   - docker login -u 'robot$drone' -p $DOCKER_PASSWORD harbor.dsrd.libraries.psu.edu
   - docker build -t harbor.dsrd.libraries.psu.edu/library/matomo:$DOCKER_TAG .
   - docker tag harbor.dsrd.libraries.psu.edu/library/matomo:$DOCKER_TAG harbor.dsrd.libraries.psu.edu/library/matomo:latest
-  - docker push harbor.dsrd.libraries.psu.edu/library/matomo$DOCKER_TAG'
+  - docker push harbor.dsrd.libraries.psu.edu/library/matomo$DOCKER_TAG
   when:
     events: [ tags ]
     branches: [ master ]
@@ -28,6 +28,6 @@ volumes:
     path: /var/run/docker.sock
 ---
 kind: signature
-hmac: b9114b1331d20753af42bd0bb606b89e87a599750158453a462953130383f71c
+hmac: 3bb3df33697eeb09d8e309c8020672dd8ca02d28e996c0d275123bbb99a8dbb6
 
 ...
