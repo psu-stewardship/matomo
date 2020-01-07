@@ -35,7 +35,7 @@ curl -sS -o /dev/null  -X POST -F "action=finished" -F "module=Installation" -F 
 
 # activate plugins
 /var/www/html/console plugin:activate LoginLdap
-/var/www/html/console plugin:activate LoginOIDC
+# /var/www/html/console plugin:activate LoginOIDC
 chown -R www-data /var/www/html/tmp/
 
 # stop temporary apache
