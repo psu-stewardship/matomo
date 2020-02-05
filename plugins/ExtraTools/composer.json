@@ -1,0 +1,26 @@
+{
+    "name": "digitalist-se/extratools",
+    "description": "Extra console tools for Matomo",
+    "keywords": [
+        "cli",
+        "install"
+    ],
+    "homepage": "https://github.com/digitalist-se/extratools",
+    "version": "0.1.0-beta4",
+    "license": "GPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Digitalist",
+            "email": "se.ops@digitalistgroup.com",
+            "homepage": "https://digitalist.se"
+        },
+        {
+            "name": "Mikke Schirén",
+            "email": "mikke.schiren@digitalistgroup.com",
+            "homepage": "https://digitalist.se"
+        }
+    ],
+    "require": {
+        "php": ">=7.1"
+    }
+}
