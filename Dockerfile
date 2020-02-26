@@ -51,7 +51,7 @@ RUN set -ex; \
 
 
 # install matomo code
-ENV MATOMO_VERSION 3.13.2
+ENV MATOMO_VERSION 3.13.3
 
 RUN apt-get update && \
 	apt-get -y install git mariadb-client && \
@@ -72,6 +72,10 @@ RUN composer require symfony/yaml:~2.6.0 && \
 COPY plugins /var/www/html/plugins
 COPY config/php.ini /usr/local/etc/php/conf.d/php-matomo.ini
 COPY config/LoginLdap.conf /tmp
+COPY config/rewrite.conf /tmp
+
+# mount as volume
+COPY config/matomo.sql /tmp
 
 
 # run it

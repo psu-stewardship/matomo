@@ -35,6 +35,7 @@ class Import
             "mysql -u $db_user -h $db_host -p$db_pass $db_name < $backup_path"
         );
         $import->enableOutput();
+        $import->setTimeout(3600);
 
         $import->run();
         echo $import->getOutput();
