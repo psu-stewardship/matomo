@@ -6,7 +6,8 @@ services:
     build: .
     restart: always
     volumes:
-      - matomo:/var/www/html
+      - apache:/usr/local/apache2
+      - matomo:/usr/local/matomo
     environment:
 
       HOST_ENV: ${HOST_ENV}
@@ -70,5 +71,6 @@ services:
       - "3306:3306"
 
 volumes:
+  apache:
   db-data:
   matomo:

@@ -31,6 +31,37 @@ then
 
 else
 
+  # install plugins
+  echo " "
+  echo " ============================= INSTALLING PLUGINS ============================= "
+  echo " "
+
+  if [ -d /var/www/html/config ] ; then
+    mv /var/www/html/config /usr/local/matomo/
+    ln -s /usr/local/matomo/config /var/www/html/config
+  fi
+
+  mv /tmp/ExtraTools /usr/local/matomo/
+  mv /tmp/LoginLdap /usr/local/matomo/
+  mv /tmp/LoginOIDC /usr/local/matomo/
+  chown -R www-data /usr/local/matomo/
+
+  if [ -d /var/www/html/plugins/ExtraTools ] ; then
+    rm -R /var/www/html/plugins/ExtraTools
+  fi
+
+  if [ -d /var/www/html/plugins/LoginLdap ] ; then
+    rm -R /var/www/html/plugins/LoginLdap
+  fi
+
+  if [ -d /var/www/html/plugins/LoginOIDC ] ; then
+    rm -R /var/www/html/plugins/LoginOIDC
+  fi
+
+  ln -s /usr/local/matomo/ExtraTools /var/www/html/plugins/ExtraTools
+  ln -s /usr/local/matomo/LoginLdap /var/www/html/plugins/LoginLdap
+  ln -s /usr/local/matomo/LoginOIDC /var/www/html/plugins/LoginOIDC
+
   # use extra tools plugin to install matomo
   echo " "
   echo " ============================= ENABLING EXTRA TOOLS PLUGIN ============================= "
@@ -38,7 +69,9 @@ else
 
   /var/www/html/console plugin:activate ExtraTools
   /var/www/html/console matomo:install --force
-  
+  chown -R www-data /var/www/html/config/
+
+
   # import current database
   echo " "
   echo " ============================= IMPORTING THE EXISTING DATABASE ============================= "
@@ -68,7 +101,35 @@ else
   echo " "
   echo " ============================= CONFIGURING LOGIN OIDC ============================= "
   echo " "
-  echo "INSERT INTO matomo_plugin_setting (plugin_name, setting_name, setting_value, json_encoded, user_login) VALUES ('LoginOIDC','disableSuperuser','1',0,''),('LoginOIDC','allowSignup','0',0,''),('LoginOIDC','authenticationName','OAuth login',0,''),('LoginOIDC','authorizeUrl','${LOGIN_OIDC_AUTHORIZE}',0,''),('LoginOIDC','tokenUrl','${LOGIN_OIDC_TOKEN}',0,''),('LoginOIDC','userinfoUrl','${LOGIN_OIDC_USERINFO}',0,''),('LoginOIDC','userinfoId','sub',0,''),('LoginOIDC','clientId','${LOGIN_OIDC_CLIENT_ID}',0,''),('LoginOIDC','clientSecret','${LOGIN_OIDC_CLIENT_SECRET}',0,''),('LoginOIDC','scope','openid email profile groups',0,''),('LoginOIDC','redirectUriOverride','${LOGIN_OIDC_CALLBACK}',0,'');" | /usr/bin/mysql --password="${MATOMO_DB_PASSWORD}" -u "${MATOMO_DB_USERNAME}" -h "${MATOMO_DB_HOST}" "${MATOMO_DB_NAME}"
+  echo "INSERT INTO matomo_plugin_setting (plugin_name, setting_name, setting_value, json_encoded, user_login) VALUES ('LoginOIDC','disableSuperuser','1',0,''),('LoginOIDC','allowSignup','1',0,''),('LoginOIDC','authenticationName','OAuth login',0,''),('LoginOIDC','authorizeUrl','${LOGIN_OIDC_AUTHORIZE}',0,''),('LoginOIDC','tokenUrl','${LOGIN_OIDC_TOKEN}',0,''),('LoginOIDC','userinfoUrl','${LOGIN_OIDC_USERINFO}',0,''),('LoginOIDC','userinfoId','sub',0,''),('LoginOIDC','clientId','${LOGIN_OIDC_CLIENT_ID}',0,''),('LoginOIDC','clientSecret','${LOGIN_OIDC_CLIENT_SECRET}',0,''),('LoginOIDC','scope','openid email profile groups',0,''),('LoginOIDC','redirectUriOverride','${LOGIN_OIDC_CALLBACK}',0,'');" | /usr/bin/mysql --password="${MATOMO_DB_PASSWORD}" -u "${MATOMO_DB_USERNAME}" -h "${MATOMO_DB_HOST}" "${MATOMO_DB_NAME}"
+
+
+  # link users to OAuth
+  echo " "
+  echo " ============================= LINKING USERS TO OAUTH ============================= "
+  echo " "
+
+  date=$(date +'%Y-%m-%d %H:%M:%S')
+  USERLIST=$(echo "SELECT login from matomo_user" | /usr/bin/mysql --password="${MATOMO_DB_PASSWORD}" -u "${MATOMO_DB_USERNAME}" -h "${MATOMO_DB_HOST}" "${MATOMO_DB_NAME}")
+  for user in $USERLIST
+  do
+    echo "USER: $user"
+    if [ $user == 'login' ] || [ $user == 'anonymous' ] ; then
+      echo "SKIPPING USER: $user"
+      continue
+    fi
+    echo "INSERT INTO matomo_loginoidc_provider (user, provider_user, provider, date_connected) VALUES ('$user', '$user', 'oidc', '$date');" | /usr/bin/mysql --password="${MATOMO_DB_PASSWORD}" -u "${MATOMO_DB_USERNAME}" -h "${MATOMO_DB_HOST}" "${MATOMO_DB_NAME}"
+  done
+
+
+  # enable apache rewrite
+  echo " "
+  echo " ============================= ENABLING APACHE REWRITE ============================= "
+  echo " "
+
+  cp /tmp/rewrite.conf /usr/local/apache2/
+  ln -s /usr/local/apache2/rewrite.conf /etc/apache2/conf-enabled/rewrite.conf
+  a2enmod rewrite
 
 fi
 
@@ -88,36 +149,6 @@ echo " ============================= SYNCHRONIZING LDAP USERS ==================
 echo " "
 
 /var/www/html/console -n loginldap:synchronize-users || true
-
-
-# link users to OAuth
-echo " "
-echo " ============================= LINKING USERS TO OAUTH ============================= "
-echo " "
-
-date=$(date +'%Y-%m-%d %H:%M:%S')
-USERLIST=$(echo "SELECT login from matomo_user" | /usr/bin/mysql --password="${MATOMO_DB_PASSWORD}" -u "${MATOMO_DB_USERNAME}" -h "${MATOMO_DB_HOST}" "${MATOMO_DB_NAME}")
-for user in $USERLIST
-do
-  echo "USER: $user"
-  if [ $user == 'login' ] || [ $user == 'anonymous' ] ; then
-    echo "SKIPPING USER: $user"
-    continue
-  fi
-  echo "INSERT INTO matomo_loginoidc_provider (user, provider_user, provider, date_connected) VALUES ('$user', '$user', 'oidc', '$date');" | /usr/bin/mysql --password="${MATOMO_DB_PASSWORD}" -u "${MATOMO_DB_USERNAME}" -h "${MATOMO_DB_HOST}" "${MATOMO_DB_NAME}"
-done
-
-
-
-# TODO: make this persistent
-# enable apache rewrite
-echo " "
-echo " ============================= ENABLING APACHE REWRITE ============================= "
-echo " "
-
-mv /tmp/rewrite.conf /etc/apache2/conf-available/
-/usr/sbin/a2enmod rewrite
-/usr/sbin/a2enconf rewrite
 
 
 # run apache in the foreground
