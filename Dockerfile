@@ -51,7 +51,7 @@ RUN set -ex; \
 
 
 # install matomo code
-ENV MATOMO_VERSION 3.13.1
+ENV MATOMO_VERSION 3.13.3
 
 RUN apt-get update && \
 	apt-get -y install git mariadb-client && \
