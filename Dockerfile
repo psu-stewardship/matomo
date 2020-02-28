@@ -56,6 +56,7 @@ ENV MATOMO_VERSION 3.13.1
 RUN apt-get update && \
 	apt-get -y install git mariadb-client && \
 	git clone -b ${MATOMO_VERSION} --single-branch --depth 1 https://github.com/matomo-org/matomo.git /var/www/html && \
+	chown -R www-data /var/www/html && \
 	rm -rf /var/lib/apt/lists/*
 
 

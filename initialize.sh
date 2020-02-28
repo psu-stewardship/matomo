@@ -8,7 +8,7 @@ echo " "
 echo " ============================= WAITING FOR DATABASE CONNECTION ============================= "
 echo " "
 
-if ! timeout 60 bash -c 'until printf "" 2>>/dev/null >>/dev/tcp/$0/$1; do sleep 1; done' "${MATOMO_DB_HOST:-localhost}" "3306"
+if ! timeout 120 bash -c 'until printf "" 2>>/dev/null >>/dev/tcp/$0/$1; do sleep 1; done' "${MATOMO_DB_HOST:-localhost}" "3306"
 then
   echo " "
   echo " ============================= NO DATABASE CONNECTION TIMED OUT, EXITING ============================= "
@@ -16,12 +16,50 @@ then
   exit 1
 fi
 
-
 # check if matomo is installed
 echo " "
-echo " ============================= INSTALLING MATOMO ============================= "
+echo " ============================= ENABLING PREVIOUS INSTALLATION ============================= "
 echo " "
 
+# link to config
+if [ -d /usr/local/matomo/config ] ; then
+  if [ -d /var/www/html/config ] ; then
+    rm -R /var/www/html/config
+  fi
+  ln -s /usr/local/matomo/config /var/www/html/config
+fi
+
+# link to plugins
+if [ -d /usr/local/matomo/ExtraTools ] ; then
+  if [ -d /var/www/html/plugins/ExtraTools ] ; then
+    rm -R /var/www/html/plugins/ExtraTools
+  fi
+  ln -s /usr/local/matomo/ExtraTools /var/www/html/plugins/ExtraTools
+fi
+
+if [ -d /usr/local/matomo/LoginLdap ] ; then
+  if [ -d /var/www/html/plugins/LoginLdap ] ; then
+    rm -R /var/www/html/plugins/LoginLdap
+  fi
+  ln -s /usr/local/matomo/LoginLdap /var/www/html/plugins/LoginLdap
+fi
+
+if [ -d /usr/local/matomo/LoginOIDC ] ; then
+  if [ -d /var/www/html/plugins/LoginOIDC ] ; then
+    rm -R /var/www/html/plugins/LoginOIDC
+  fi
+  ln -s /usr/local/matomo/LoginOIDC /var/www/html/plugins/LoginOIDC
+fi
+
+if [ ! -L /etc/apache2/conf-enabled/rewrite.conf ] ; then
+  ln -s /usr/local/apache2/rewrite.conf /etc/apache2/conf-enabled/rewrite.conf
+  a2enmod rewrite
+fi
+
+
+# exec apache2-foreground
+
+# check if matomo is installed
 if bash -c '/var/www/html/console -q site:list' >> /dev/null
 then
 
@@ -33,7 +71,7 @@ else
 
   # install plugins
   echo " "
-  echo " ============================= INSTALLING PLUGINS ============================= "
+  echo " ============================= INSTALLING MATOMO ============================= "
   echo " "
 
   if [ -d /var/www/html/config ] ; then
@@ -49,18 +87,18 @@ else
   if [ -d /var/www/html/plugins/ExtraTools ] ; then
     rm -R /var/www/html/plugins/ExtraTools
   fi
+  ln -s /usr/local/matomo/ExtraTools /var/www/html/plugins/ExtraTools
 
   if [ -d /var/www/html/plugins/LoginLdap ] ; then
     rm -R /var/www/html/plugins/LoginLdap
   fi
+  ln -s /usr/local/matomo/LoginLdap /var/www/html/plugins/LoginLdap
 
   if [ -d /var/www/html/plugins/LoginOIDC ] ; then
     rm -R /var/www/html/plugins/LoginOIDC
   fi
-
-  ln -s /usr/local/matomo/ExtraTools /var/www/html/plugins/ExtraTools
-  ln -s /usr/local/matomo/LoginLdap /var/www/html/plugins/LoginLdap
   ln -s /usr/local/matomo/LoginOIDC /var/www/html/plugins/LoginOIDC
+
 
   # use extra tools plugin to install matomo
   echo " "
@@ -128,7 +166,9 @@ else
   echo " "
 
   cp /tmp/rewrite.conf /usr/local/apache2/
-  ln -s /usr/local/apache2/rewrite.conf /etc/apache2/conf-enabled/rewrite.conf
+  if [ ! -L /etc/apache2/conf-enabled/rewrite.conf ] ; then
+    ln -s /usr/local/apache2/rewrite.conf /etc/apache2/conf-enabled/rewrite.conf
+  fi
   a2enmod rewrite
 
 fi
@@ -140,7 +180,7 @@ echo " ============================= UPDATING MATOMO ===========================
 echo " "
 
 /var/www/html/console core:update --yes -n
-chown -R www-data /var/www/html
+chown -R www-data /var/www/html/tmp/ /var/www/html/vendor/
 
 
 # synchronize ldap users
