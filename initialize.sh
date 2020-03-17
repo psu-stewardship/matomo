@@ -8,7 +8,7 @@ echo " "
 echo " ============================= WAITING FOR DATABASE CONNECTION ============================= "
 echo " "
 
-if ! timeout 120 bash -c 'until printf "" 2>>/dev/null >>/dev/tcp/$0/$1; do sleep 1; done' "${MATOMO_DB_HOST:-localhost}" "3306"
+if ! timeout 120 bash -c 'until printf "" 2>>/dev/null >>/dev/tcp/$0/$1; do sleep 1; done' "${MATOMO_DATABASE_HOST:-localhost}" "3306"
 then
   echo " "
   echo " ============================= NO DATABASE CONNECTION TIMED OUT, EXITING ============================= "
