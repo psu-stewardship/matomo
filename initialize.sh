@@ -111,14 +111,15 @@ else
 
 
   # import current database
-  echo " "
-  echo " ============================= IMPORTING THE EXISTING DATABASE ============================= "
-  echo " "
+  if [ $HOST_ENV == 'TEST' ] ; then
+    echo " "
+    echo " ============================= IMPORTING THE EXISTING DATABASE ============================= "
+    echo " "
 
-  echo "DROP DATABASE matomo; CREATE DATABASE matomo" | /usr/bin/mysql --password="${MATOMO_DB_PASSWORD}" -u "${MATOMO_DB_USERNAME}" -h "${MATOMO_DB_HOST}"
-  sed -i '/dbname/ a tables_prefix = \"matomo_\"' /var/www/html/config/config.ini.php
-  /var/www/html/console database:import -b /tmp/matomo.sql
-
+    echo "DROP DATABASE matomo; CREATE DATABASE matomo" | /usr/bin/mysql --password="${MATOMO_DB_PASSWORD}" -u "${MATOMO_DB_USERNAME}" -h "${MATOMO_DB_HOST}"
+    sed -i '/dbname/ a tables_prefix = \"matomo_\"' /var/www/html/config/config.ini.php
+    /var/www/html/console database:import -b /tmp/matomo.sql
+  fi
 
   # enable and conigure LoginLdap plugin
   echo " "
@@ -152,7 +153,7 @@ else
   for user in $USERLIST
   do
     echo "USER: $user"
-    if [ $user == 'login' ] || [ $user == 'anonymous' ] ; then
+    if [ $user == 'login' ] || [ $user == 'anonymous' ] || [ $user == "${MATOMO_SUPERUSER_USERNAME}" ] ; then
       echo "SKIPPING USER: $user"
       continue
     fi
